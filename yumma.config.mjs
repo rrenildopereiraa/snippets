@@ -4,12 +4,13 @@ export default defineConfig({
 	source: ["./src/**/*.{ts,tsx}"],
 	theme: {
 		colors: {
-			accent: "#2563eb",
-			"accent-dim": "#64748b",
-			border: "#cbd5e1",
+			accent: { light: "#2563eb", dark: "#bec6f2" },
+			"accent-dim": { light: "#64748b", dark: "#b9bed5" },
+			"on-accent": { light: "#ffffff", dark: "#21243f" },
+			border: { light: "#cbd5e1", dark: "#31365e" },
 			code: "#2563eb",
-			page: "#ffffff",
-			surface: "#f1f5f9",
+			page: { light: "#ffffff", dark: "#21243f" },
+			surface: { light: "#f1f5f9", dark: "#1e2039" },
 			"diff-add": "#86efac",
 			"diff-remove": "#fca5a5",
 			warning: "#fcd34d",

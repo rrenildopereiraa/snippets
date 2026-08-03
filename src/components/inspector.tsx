@@ -4,7 +4,11 @@ import { Switch } from "@base-ui/react/switch";
 import { Tabs } from "@base-ui/react/tabs";
 import { ShuffleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { useState } from "react";
-import { useChromeTheme, useHover } from "../lib/chrome-theme";
+import {
+	type ChromeMode,
+	type FrameMode,
+	useChromeTheme,
+} from "../lib/chrome-theme";
 import { LANGUAGES, type LanguageId, THEMES } from "../lib/highlighter";
 import {
 	ASPECT_RATIOS,
@@ -24,6 +28,20 @@ const PATTERN_LABELS: Record<BackgroundPattern, string> = {
 	"stripes-right": "Stripes Right",
 	"stripes-left": "Stripes Left",
 };
+
+const CHROME_MODE_OPTIONS: { id: ChromeMode; label: string }[] = [
+	{ id: "light", label: "Light" },
+	{ id: "dark", label: "Dark" },
+	{ id: "auto", label: "Auto (OS)" },
+];
+
+// The frame code block's own light/dark preference, independent of the
+// app scheme. Auto keeps the frame following the app.
+const FRAME_MODE_OPTIONS: { id: FrameMode; label: string }[] = [
+	{ id: "light", label: "Light" },
+	{ id: "dark", label: "Dark" },
+	{ id: "auto", label: "Auto (app)" },
+];
 
 export type FontFamilyId =
 	| "default"
@@ -70,7 +88,6 @@ function SettingsTabs({
 	tab: SettingsTab;
 	onTabChange: (value: SettingsTab) => void;
 }) {
-	const { colors } = useChromeTheme();
 	return (
 		<div className="mt--3 mx--3 mb-3">
 			<Tabs.Root
@@ -82,27 +99,17 @@ function SettingsTabs({
 				<Tabs.List className="d-f">
 					<Tabs.Tab
 						value="layout"
-						className="f-1 px-3 py-2 fs-xs ff-m ta-c us-none c-p brw-1 bs-s fv:os-s fv:oo--2 fv:oc-accent"
-						style={(state) => ({
-							backgroundColor: state.active ? colors.surface : colors.page,
-							color: colors.accentDim,
-							fontWeight: state.active ? 700 : undefined,
-							borderBottomWidth: state.active ? undefined : 1,
-							borderColor: colors.border,
-						})}
+						className={(state) =>
+							`f-1 px-3 py-2 fs-xs ff-m ta-c us-none c-p brw-1 bs-s bc-border c-accent-dim fv:os-s fv:oo--2 fv:oc-accent ${state.active ? "bg-surface fw-700" : "bg-page bbw-1"}`
+						}
 					>
 						Layout
 					</Tabs.Tab>
 					<Tabs.Tab
 						value="style"
-						className="f-1 px-3 py-2 fs-xs ff-m ta-c us-none c-p fv:os-s fv:oo--2 fv:oc-accent"
-						style={(state) => ({
-							backgroundColor: state.active ? colors.surface : colors.page,
-							color: colors.accentDim,
-							fontWeight: state.active ? 700 : undefined,
-							borderBottomWidth: state.active ? undefined : 1,
-							borderColor: colors.border,
-						})}
+						className={(state) =>
+							`f-1 px-3 py-2 fs-xs ff-m ta-c us-none c-p bc-border c-accent-dim fv:os-s fv:oo--2 fv:oc-accent ${state.active ? "bg-surface fw-700" : "bg-page bbw-1"}`
+						}
 					>
 						Style
 					</Tabs.Tab>
@@ -113,25 +120,11 @@ function SettingsTabs({
 }
 
 function SectionSeparator({ label }: { label: string }) {
-	const { colors } = useChromeTheme();
 	return (
 		<div className="d-f ai-c g-2 pb-2">
-			<Separator
-				orientation="horizontal"
-				className="w-3 h-px"
-				style={{ backgroundColor: colors.border }}
-			/>
-			<span
-				className="fs-xs ff-m us-none ws-nw"
-				style={{ color: colors.accentDim }}
-			>
-				{label}
-			</span>
-			<Separator
-				orientation="horizontal"
-				className="f-1 h-px"
-				style={{ backgroundColor: colors.border }}
-			/>
+			<Separator orientation="horizontal" className="w-3 h-px bg-border" />
+			<span className="fs-xs ff-m us-none ws-nw c-accent-dim">{label}</span>
+			<Separator orientation="horizontal" className="f-1 h-px bg-border" />
 		</div>
 	);
 }
@@ -147,30 +140,22 @@ function OptionSwitch({
 	onCheckedChange: (value: boolean) => void;
 	disabled?: boolean;
 }) {
-	const { colors } = useChromeTheme();
 	return (
 		<div
 			className="d-f ai-c jc-sb g-2 px-2 pb-3"
 			style={disabled ? { opacity: 0.5 } : undefined}
 		>
-			<span className="fs-sm ff-m us-none" style={{ color: colors.accentDim }}>
-				{label}
-			</span>
+			<span className="fs-sm ff-m us-none c-accent-dim">{label}</span>
 			<Switch.Root
 				checked={checked}
 				onCheckedChange={onCheckedChange}
 				disabled={disabled}
-				className="switch-root p-r d-f ai-c h-5 w-9 m-0 px-1 bw-1 bs-s c-p fv:os-s fv:oo-2 fv:oc-accent"
-				style={{
-					backgroundColor: checked ? colors.accent : colors.page,
-					borderColor: checked ? colors.accent : colors.border,
-				}}
+				className={`switch-root p-r d-f ai-c h-5 w-9 m-0 px-1 bw-1 bs-s c-p fv:os-s fv:oo-2 fv:oc-accent ${
+					checked ? "bg-accent bc-accent" : "bg-page bc-border"
+				}`}
 			>
 				<Switch.Thumb
-					className={`switch-thumb w-4 h-3 bs-o-xs ${checked ? "ml-3" : "ml-0"}`}
-					style={{
-						backgroundColor: checked ? colors.page : colors.accentDim,
-					}}
+					className={`switch-thumb w-4 h-3 bs-o-xs ${checked ? "ml-3 bg-page" : "ml-0 bg-accent-dim"}`}
 				/>
 			</Switch.Root>
 		</div>
@@ -200,6 +185,8 @@ interface InspectorContentProps {
 	themeName: string;
 	onThemeChange: (value: string) => void;
 	themeIsRandom: boolean;
+	frameMode: FrameMode;
+	onFrameModeChange: (value: FrameMode) => void;
 	frameColors: FrameColors;
 	onFrameColorsChange: (value: FrameColors) => void;
 	onUploadTheme: (file: File) => void;
@@ -228,13 +215,12 @@ function InspectorContent({
 	themeName,
 	onThemeChange,
 	themeIsRandom,
+	frameMode,
+	onFrameModeChange,
 	frameColors,
 	onFrameColorsChange,
 	onUploadTheme,
 }: InspectorContentProps) {
-	const { colors } = useChromeTheme();
-	const { hovered: uploadHovered, hoverHandlers: uploadHoverHandlers } =
-		useHover();
 	if (tab === "layout") {
 		return (
 			<>
@@ -248,13 +234,13 @@ function InspectorContent({
 					checked={showBoundingBox}
 					onCheckedChange={onShowBoundingBoxChange}
 				/>
-			<OptionSwitch
-				label="Status Bar"
-				checked={showStatusBar}
-				onCheckedChange={onShowStatusBarChange}
-			/>
+				<OptionSwitch
+					label="Status Bar"
+					checked={showStatusBar}
+					onCheckedChange={onShowStatusBarChange}
+				/>
 
-			<RadiusControl radii={radii} onRadiiChange={onRadiiChange} />
+				<RadiusControl radii={radii} onRadiiChange={onRadiiChange} />
 
 				<PickerField
 					label="Aspect Ratio"
@@ -263,7 +249,7 @@ function InspectorContent({
 					onValueChange={onAspectRatioChange}
 				/>
 
-			<PickerField
+				<PickerField
 					label="Font Family"
 					value={fontFamily}
 					options={(Object.keys(FONT_FAMILIES) as FontFamilyId[]).map((id) => ({
@@ -319,6 +305,13 @@ function InspectorContent({
 				}
 			/>
 
+			<PickerField
+				label="Frame Theme"
+				value={frameMode}
+				options={FRAME_MODE_OPTIONS}
+				onValueChange={onFrameModeChange}
+			/>
+
 			<div className="px-2 pb-4">
 				<Button
 					onClick={() => {
@@ -331,12 +324,7 @@ function InspectorContent({
 						};
 						input.click();
 					}}
-					className="d-f ai-c jc-c g-2 w-100% px-2 py-2 bw-1 bs-d bg-transparent fs-xs ff-m us-none c-p fv:os-s fv:oo-2 fv:oc-accent"
-					style={{
-						borderColor: uploadHovered ? colors.accent : colors.border,
-						color: uploadHovered ? colors.accent : colors.accentDim,
-					}}
-					{...uploadHoverHandlers}
+					className="d-f ai-c jc-c g-2 w-100% px-2 py-2 bw-1 bs-d bg-transparent fs-xs ff-m us-none c-p bc-border c-accent-dim h:bc-accent h:c-accent fv:os-s fv:oo-2 fv:oc-accent"
 				>
 					<UploadSimpleIcon size={14} weight="fill" />
 					Import VS Code Theme
@@ -372,16 +360,11 @@ export function Inspector({
 	onRandomize: () => void;
 }) {
 	const [tab, setTab] = useState<SettingsTab>("layout");
-	const { mode, colors, toggle } = useChromeTheme();
-	const { hovered: randomizeHovered, hoverHandlers: randomizeHoverHandlers } =
-		useHover();
+	const { mode, setMode } = useChromeTheme();
 
 	return (
 		<>
-			<aside
-				className="d-none @lg:d-f fd-c w-72 fs-0 min-h-0 oy-auto blw-1 bs-s p-3"
-				style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-			>
+			<aside className="d-none @lg:d-f fd-c w-72 fs-0 min-h-0 oy-auto blw-1 bs-s bc-border bg-surface p-3">
 				<SettingsTabs tab={tab} onTabChange={setTab} />
 				<InspectorContent tab={tab} {...contentProps} />
 			</aside>
@@ -391,10 +374,11 @@ export function Inspector({
 
 				<SectionSeparator label="Quick Actions" />
 
-				<OptionSwitch
-					label="Dark Mode"
-					checked={mode === "dark"}
-					onCheckedChange={toggle}
+				<PickerField
+					label="Appearance"
+					value={mode}
+					options={CHROME_MODE_OPTIONS}
+					onValueChange={setMode}
 				/>
 
 				<PickerField
@@ -410,12 +394,7 @@ export function Inspector({
 				<div className="px-2 pb-4">
 					<Button
 						onClick={onRandomize}
-						className="d-f ai-c jc-c g-2 w-100% px-2 py-2 bw-1 bs-d bg-transparent fs-xs ff-m us-none c-p fv:os-s fv:oo-2 fv:oc-accent"
-						style={{
-							borderColor: randomizeHovered ? colors.accent : colors.border,
-							color: randomizeHovered ? colors.accent : colors.accentDim,
-						}}
-						{...randomizeHoverHandlers}
+						className="d-f ai-c jc-c g-2 w-100% px-2 py-2 bw-1 bs-d bg-transparent fs-xs ff-m us-none c-p bc-border c-accent-dim h:bc-accent h:c-accent fv:os-s fv:oo-2 fv:oc-accent"
 					>
 						<ShuffleIcon size={14} weight="bold" />
 						Randomize

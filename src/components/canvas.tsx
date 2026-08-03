@@ -1,3 +1,5 @@
+import { useRef } from "react";
+import type { ResolvedMode } from "../lib/chrome-theme";
 import type { LanguageId } from "../lib/highlighter";
 import type {
 	AspectRatio,
@@ -34,6 +36,7 @@ export function Canvas({
 	colors,
 	showBoundingBox,
 	frameRef,
+	mode,
 }: {
 	code: string;
 	onCodeChange: (value: string) => void;
@@ -65,9 +68,15 @@ export function Canvas({
 	colors: FrameColors;
 	showBoundingBox: boolean;
 	frameRef: React.RefObject<HTMLDivElement | null>;
+	mode: ResolvedMode;
 }) {
+	const viewportRef = useRef<HTMLElement>(null);
+
 	return (
-		<main className="f-1 d-f min-h-0 min-w-0 o-auto px-2 @sm:px-4 py-8 @sm:py-16">
+		<main
+			ref={viewportRef}
+			className="f-1 d-f min-h-0 min-w-0 o-auto px-2 @sm:px-4 py-8 @sm:py-16"
+		>
 			<div className="m-auto p-r min-w-0">
 				<Frame
 					ref={frameRef}
@@ -83,16 +92,18 @@ export function Canvas({
 					onCycleWordHighlight={onCycleWordHighlight}
 					onSetWordRangeHighlight={onSetWordRangeHighlight}
 					textareaRef={textareaRef}
-				showTabBar={showTabBar}
-				showStatusBar={showStatusBar}
-				showGridLines={showGridLines}
-				showBackgroundPattern={showBackgroundPattern}
-				background={background}
+					showTabBar={showTabBar}
+					showStatusBar={showStatusBar}
+					showGridLines={showGridLines}
+					showBackgroundPattern={showBackgroundPattern}
+					background={background}
 					aspectRatio={aspectRatio}
 					radii={radii}
 					fontFamily={fontFamily}
 					themeName={themeName}
 					colors={colors}
+					viewportRef={viewportRef}
+					mode={mode}
 				/>
 
 				{showBoundingBox && <BoundingBox />}

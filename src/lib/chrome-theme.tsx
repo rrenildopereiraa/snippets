@@ -6,59 +6,60 @@ import {
 	useState,
 } from "react";
 
-export type ChromeMode = "light" | "dark";
+export type ChromeMode = "light" | "dark" | "auto";
 
-export interface ChromeColors {
-	page: string;
-	surface: string;
-	border: string;
-	accent: string;
-	accentDim: string;
-	// Text color placed on top of an accent-colored background/hover state -
-	// needs to flip independently of `page`/`accent` since Eclipsa's accent
-	// is a light periwinkle, not a dark saturated blue like the light theme's.
-	onAccent: string;
-	diffAdd: string;
-}
+// The frame's own light/dark preference. "auto" keeps the frame following
+// the app scheme; light/dark force the code block's appearance regardless
+// of how the app itself is themed.
+export type FrameMode = "light" | "dark" | "auto";
 
-const LIGHT_CHROME_COLORS: ChromeColors = {
-	page: "#ffffff",
-	surface: "#f1f5f9",
-	border: "#cbd5e1",
-	accent: "#2563eb",
-	accentDim: "#64748b",
-	onAccent: "#ffffff",
-	diffAdd: "#86efac",
-};
-
-// Same palette as the Eclipsa code-frame theme.
-const DARK_CHROME_COLORS: ChromeColors = {
-	page: "#21243f",
-	surface: "#1e2039",
-	border: "#31365e",
-	accent: "#bec6f2",
-	accentDim: "#b9bed5",
-	onAccent: "#21243f",
-	diffAdd: "#86efac",
-};
-
-export const CHROME_COLORS: Record<ChromeMode, ChromeColors> = {
-	light: LIGHT_CHROME_COLORS,
-	dark: DARK_CHROME_COLORS,
-};
+// The concrete scheme once "auto" is resolved against the operating
+// system - JS-driven consumers (the exported code frame) need a definite
+// scheme, CSS consumers just inherit `color-scheme` instead.
+export type ResolvedMode = "light" | "dark";
 
 const STORAGE_KEY = "prisharp-chrome-mode";
 
+// Yumma CSS color-scheme utilities: `cs-l`/`cs-d` force a scheme, `cs-ld`
+// follows the operating system. Applied to <html> so Base UI portals
+// (tooltips, pickers, dialogs) inherit the scheme too.
+const MODE_CLASS: Record<ChromeMode, string> = {
+	light: "cs-l",
+	dark: "cs-d",
+	auto: "cs-ld",
+};
+
 function readStoredMode(): ChromeMode {
-	if (typeof window === "undefined") return "dark";
+	if (typeof window === "undefined") return "auto";
 	const stored = window.localStorage.getItem(STORAGE_KEY);
-	return stored === "light" ? "light" : "dark";
+	return stored === "light" || stored === "dark" ? stored : "auto";
+}
+
+function applyModeClass(mode: ChromeMode) {
+	const root = document.documentElement;
+	root.classList.remove("cs-l", "cs-d", "cs-ld");
+	root.classList.add(MODE_CLASS[mode]);
+}
+
+function readOsMode(): ResolvedMode {
+	if (typeof window === "undefined") return "dark";
+	return window.matchMedia("(prefers-color-scheme: dark)").matches
+		? "dark"
+		: "light";
+}
+
+// Called once before the first render so the initial paint already carries
+// the stored scheme - waiting for the provider's effect would flash the OS
+// scheme for users with a stored override.
+export function initChromeMode() {
+	applyModeClass(readStoredMode());
 }
 
 const ChromeThemeContext = createContext<{
 	mode: ChromeMode;
-	colors: ChromeColors;
-	toggle: () => void;
+	resolvedMode: ResolvedMode;
+	setMode: (mode: ChromeMode) => void;
+	cycleMode: () => void;
 } | null>(null);
 
 export function useChromeTheme() {
@@ -69,33 +70,35 @@ export function useChromeTheme() {
 	return ctx;
 }
 
-// The Yumma CSS `h:` hover-variant classes bake in the light theme's colors, so a
-// hover state in dark mode would show the wrong (light) tint - track hover
-// as JS state instead so hover colors can come from the current theme too.
-export function useHover() {
-	const [hovered, setHovered] = useState(false);
-	return {
-		hovered,
-		hoverHandlers: {
-			onMouseEnter: () => setHovered(true),
-			onMouseLeave: () => setHovered(false),
-		},
-	};
-}
+const CYCLE: ChromeMode[] = ["light", "dark", "auto"];
 
 export function ChromeThemeProvider({ children }: { children: ReactNode }) {
 	const [mode, setMode] = useState<ChromeMode>(readStoredMode);
+	const [osMode, setOsMode] = useState<ResolvedMode>(readOsMode);
 
 	useEffect(() => {
 		window.localStorage.setItem(STORAGE_KEY, mode);
+		applyModeClass(mode);
 	}, [mode]);
 
-	const toggle = () =>
-		setMode((current) => (current === "light" ? "dark" : "light"));
+	useEffect(() => {
+		const query = window.matchMedia("(prefers-color-scheme: dark)");
+		const onChange = () => setOsMode(query.matches ? "dark" : "light");
+		query.addEventListener("change", onChange);
+		return () => query.removeEventListener("change", onChange);
+	}, []);
+
+	const cycleMode = () =>
+		setMode((current) => CYCLE[(CYCLE.indexOf(current) + 1) % CYCLE.length]);
 
 	return (
 		<ChromeThemeContext.Provider
-			value={{ mode, colors: CHROME_COLORS[mode], toggle }}
+			value={{
+				mode,
+				resolvedMode: mode === "auto" ? osMode : mode,
+				setMode,
+				cycleMode,
+			}}
 		>
 			{children}
 		</ChromeThemeContext.Provider>

@@ -3,8 +3,6 @@ import { Dialog } from "@base-ui/react/dialog";
 import { Input } from "@base-ui/react/input";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { useChromeTheme } from "../lib/chrome-theme";
-import { overlayColor } from "../lib/color";
 
 export interface Command {
 	id: string;
@@ -22,7 +20,6 @@ export function CommandPalette({
 	onOpenChange: (open: boolean) => void;
 	commands: Command[];
 }) {
-	const { colors } = useChromeTheme();
 	const [query, setQuery] = useState("");
 	const [highlighted, setHighlighted] = useState(0);
 
@@ -55,25 +52,10 @@ export function CommandPalette({
 	return (
 		<Dialog.Root open={open} onOpenChange={onOpenChange}>
 			<Dialog.Portal keepMounted>
-				<Dialog.Backdrop
-					className="p-f i-0 zi-80"
-					style={{ backgroundColor: overlayColor(colors.page, 0.6) }}
-				/>
-				<Dialog.Popup
-					className="p-f t-24 l-50% ttx--half zi-90 w-112 max-w-100% bw-1 bs-s bs-o-xs"
-					style={{
-						backgroundColor: colors.surface,
-						borderColor: colors.border,
-					}}
-				>
-					<div
-						className="d-f ai-c g-2 px-3 py-2 bbw-1 bs-s"
-						style={{ borderColor: colors.border }}
-					>
-						<MagnifyingGlassIcon
-							size={14}
-							style={{ color: colors.accentDim }}
-						/>
+				<Dialog.Backdrop className="p-f i-0 zi-80 bg-page/60" />
+				<Dialog.Popup className="p-f t-24 l-50% ttx--half zi-90 w-112 max-w-100% bw-1 bs-s bc-border bg-surface bs-o-xs">
+					<div className="d-f ai-c g-2 px-3 py-2 bbw-1 bs-s bc-border">
+						<MagnifyingGlassIcon size={14} className="c-accent-dim" />
 						<Input
 							autoFocus
 							value={query}
@@ -96,17 +78,13 @@ export function CommandPalette({
 								}
 							}}
 							placeholder="Search commands..."
-							className="f-1 ff-m fs-sm bg-transparent bs-s os-none p-0"
-							style={{ color: colors.accent }}
+							className="f-1 ff-m fs-sm bg-transparent bs-s os-none p-0 c-accent"
 						/>
 					</div>
 
 					<div className="py-1 max-h-80 oy-auto">
 						{matches.length === 0 && (
-							<div
-								className="px-3 py-2 ff-m fs-sm"
-								style={{ color: colors.accentDim }}
-							>
+							<div className="px-3 py-2 ff-m fs-sm c-accent-dim">
 								No commands found
 							</div>
 						)}
@@ -118,25 +96,18 @@ export function CommandPalette({
 								data-palette-highlighted={
 									index === highlighted ? "" : undefined
 								}
-								className="d-f ai-c jc-sb g-2 w-100% px-3 py-2 fs-sm ff-m ta-l us-none c-p bw-0"
-								style={{
-									backgroundColor:
-										index === highlighted ? colors.accent : "transparent",
-									color:
-										index === highlighted ? colors.onAccent : colors.accentDim,
-								}}
+								className={`d-f ai-c jc-sb g-2 w-100% px-3 py-2 fs-sm ff-m ta-l us-none c-p bw-0 ${
+									index === highlighted
+										? "bg-accent c-on-accent"
+										: "bg-transparent c-accent-dim"
+								}`}
 							>
 								<span>{command.label}</span>
 								{command.kbd && (
 									<span
-										className="px-1 bw-1 bs-s fs-xs ws-nw"
-										style={{
-											borderColor: colors.border,
-											color:
-												index === highlighted
-													? colors.onAccent
-													: colors.accentDim,
-										}}
+										className={`px-1 bw-1 bs-s fs-xs ws-nw bc-border ${
+											index === highlighted ? "c-on-accent" : "c-accent-dim"
+										}`}
 									>
 										{command.kbd}
 									</span>

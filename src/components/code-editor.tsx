@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ResolvedMode } from "../lib/chrome-theme";
 import { contrastColor, overlayColor } from "../lib/color";
-import { getHighlighter, type LanguageId } from "../lib/highlighter";
+import {
+	getHighlighter,
+	type LanguageId,
+	resolveShikiTheme,
+} from "../lib/highlighter";
 import type {
 	HighlightedLine,
 	HighlightedWord,
@@ -271,6 +276,7 @@ export function CodeEditor({
 	onSetWordRangeHighlight,
 	textareaRef,
 	highlightColors,
+	mode,
 }: {
 	code: string;
 	onCodeChange: (value: string) => void;
@@ -290,6 +296,7 @@ export function CodeEditor({
 	onSetWordRangeHighlight: (ranges: WordRange[]) => void;
 	textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 	highlightColors: HighlightColors;
+	mode: ResolvedMode;
 }) {
 	const [tokens, setTokens] = useState<{ content: string; color?: string }[][]>(
 		[],
@@ -321,14 +328,14 @@ export function CodeEditor({
 			const lang = language === "mjs" ? "javascript" : language;
 			const result = highlighter.codeToTokens(code, {
 				lang,
-				theme: themeName,
+				theme: resolveShikiTheme(themeName, mode),
 			});
 			setTokens(result.tokens);
 		});
 		return () => {
 			cancelled = true;
 		};
-	}, [code, language, themeName]);
+	}, [code, language, themeName, mode]);
 
 	const lines = code.split("\n");
 	const editorStyle = {

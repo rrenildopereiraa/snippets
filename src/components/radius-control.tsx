@@ -3,7 +3,6 @@ import { NumberField } from "@base-ui/react/number-field";
 import { Slider } from "@base-ui/react/slider";
 import { CaretUpIcon, CornersOutIcon } from "@phosphor-icons/react";
 import { useState } from "react";
-import { useChromeTheme, useHover } from "../lib/chrome-theme";
 import type { CornerRadii } from "../lib/types";
 
 export const RADIUS_MIN = 0;
@@ -28,8 +27,6 @@ export function RadiusControl({
 	radii: CornerRadii;
 	onRadiiChange: (value: CornerRadii) => void;
 }) {
-	const { colors } = useChromeTheme();
-	const { hovered, hoverHandlers } = useHover();
 	const [split, setSplit] = useState(false);
 
 	const values = [radii.tl, radii.tr, radii.bl, radii.br];
@@ -46,16 +43,8 @@ export function RadiusControl({
 	return (
 		<div className="d-f fd-c g-2 px-2 pt-1 pb-4">
 			<div className="d-f jc-sb ai-c">
-				<span
-					className="fs-sm ff-m us-none"
-					style={{ color: colors.accentDim }}
-				>
-					Border Radius
-				</span>
-				<span
-					className="fs-sm ff-m us-none"
-					style={{ color: colors.accentDim }}
-				>
+				<span className="fs-sm ff-m us-none c-accent-dim">Border Radius</span>
+				<span className="fs-sm ff-m us-none c-accent-dim">
 					{uniform ? `${radii.tl}px` : "Mixed"}
 				</span>
 			</div>
@@ -68,18 +57,9 @@ export function RadiusControl({
 				step={1}
 			>
 				<Slider.Control className="d-f ai-c py-3 us-none ta-none">
-					<Slider.Track
-						className="p-r h-2 w-100%"
-						style={{ backgroundColor: colors.border }}
-					>
-						<Slider.Indicator style={{ backgroundColor: colors.accent }} />
-						<Slider.Thumb
-							className="w-6 h-4 bw-1 bs-s bs-o-xs fv:os-s fv:oo-2 fv:oc-accent"
-							style={{
-								backgroundColor: colors.page,
-								borderColor: colors.border,
-							}}
-						/>
+					<Slider.Track className="p-r h-2 w-100% bg-border">
+						<Slider.Indicator className="bg-accent" />
+						<Slider.Thumb className="w-6 h-4 bw-1 bs-s bs-o-xs bg-page bc-border fv:os-s fv:oo-2 fv:oc-accent" />
 					</Slider.Track>
 				</Slider.Control>
 			</Slider.Root>
@@ -87,17 +67,11 @@ export function RadiusControl({
 			<Button
 				onClick={() => setSplit((value) => !value)}
 				aria-pressed={split}
-				className="d-f ai-c jc-c as-s g-1 px-2 py-1 fs-xs ff-m us-none c-p bw-1 bs-s fv:os-s fv:oo-2 fv:oc-accent"
-				style={{
-					backgroundColor: split ? colors.accent : "transparent",
-					borderColor: split || hovered ? colors.accent : colors.border,
-					color: split
-						? colors.onAccent
-						: hovered
-							? colors.accent
-							: colors.accentDim,
-				}}
-				{...hoverHandlers}
+				className={`d-f ai-c jc-c as-s g-1 px-2 py-1 fs-xs ff-m us-none c-p bw-1 bs-s fv:os-s fv:oo-2 fv:oc-accent ${
+					split
+						? "bg-accent bc-accent c-on-accent"
+						: "bg-transparent bc-border c-accent-dim h:bc-accent h:c-accent"
+				}`}
 			>
 				<CornersOutIcon size={12} weight="bold" />
 				Per-corner
@@ -106,15 +80,8 @@ export function RadiusControl({
 			{split && (
 				<div className="d-g gtc-2 g-1">
 					{CORNERS.map(({ id, label, Icon, rotate }) => (
-						<div
-							key={id}
-							className="d-f bw-1 bs-s"
-							style={{ borderColor: colors.border }}
-						>
-							<span
-								className="d-f ai-c jc-c w-6 fs-0 brw-1 bs-s"
-								style={{ color: colors.accentDim, borderColor: colors.border }}
-							>
+						<div key={id} className="d-f bw-1 bs-s bc-border">
+							<span className="d-f ai-c jc-c w-6 fs-0 brw-1 bs-s c-accent-dim bc-border">
 								<Icon size={12} weight="bold" aria-hidden className={rotate} />
 							</span>
 							<NumberField.Root
@@ -128,13 +95,7 @@ export function RadiusControl({
 								aria-label={`${label} radius`}
 								className="f-1"
 							>
-								<NumberField.Input
-									className="ff-m fs-sm bs-i-xs bw-0 px-1 py-1 w-100% ta-c"
-									style={{
-										color: colors.accentDim,
-										backgroundColor: colors.page,
-									}}
-								/>
+								<NumberField.Input className="ff-m fs-sm bs-i-xs bw-0 px-1 py-1 w-100% ta-c c-accent-dim bg-page" />
 							</NumberField.Root>
 						</div>
 					))}

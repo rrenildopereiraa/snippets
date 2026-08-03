@@ -76,11 +76,11 @@ importers:
         specifier: ^5.2.0
         version: 5.2.0(vite@7.3.6(@types/node@24.13.3)(lightningcss@1.32.0)(terser@5.49.0))
       '@yummacss/canon':
-        specifier: ^3.28.2
-        version: 3.28.2
+        specifier: ^3.29.0
+        version: 3.29.2
       '@yummacss/vite':
-        specifier: ^3.28.2
-        version: 3.28.2(vite@7.3.6(@types/node@24.13.3)(lightningcss@1.32.0)(terser@5.49.0))
+        specifier: ^3.29.0
+        version: 3.29.2(vite@7.3.6(@types/node@24.13.3)(lightningcss@1.32.0)(terser@5.49.0))
       sharp:
         specifier: ^0.35.3
         version: 0.35.3(@types/node@24.13.3)
@@ -94,8 +94,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0(vite@7.3.6(@types/node@24.13.3)(lightningcss@1.32.0)(terser@5.49.0))(workbox-build@7.4.1(@types/babel__core@7.20.5))(workbox-window@7.4.1)
       yummacss:
-        specifier: ^3.28.2
-        version: 3.28.2
+        specifier: ^3.29.0
+        version: 3.29.2
 
 packages:
 
@@ -1373,18 +1373,18 @@ packages:
     peerDependencies:
       vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
 
-  '@yummacss/canon@3.28.2':
-    resolution: {integrity: sha512-PeWPu00iXN1rgO1zaDLaW99HXPt2LFNvUW18Zare8toalejvTGJ6UitALZelE6s3YFV0FngqAx+tOCnmQLt0cA==}
+  '@yummacss/canon@3.29.2':
+    resolution: {integrity: sha512-+7FAJ8huIoH8p8ADwuPHWHIqbLQFzpgF4P7Zu3M39+PGT7yowYjFVmMzYC+Nv3pCoS0BYppJb740FzGY9Wmv4g==}
     hasBin: true
 
-  '@yummacss/core@3.28.2':
-    resolution: {integrity: sha512-9pUEqhJiQxCMavdC6Q09Nf3gvVuJGdk0IZOy1GD0EuJxuVGf6u2WcIiHxZxoGTzZvhfo7UW/J5LThMljUZmqpA==}
+  '@yummacss/core@3.29.2':
+    resolution: {integrity: sha512-KAXRGn1YtIxCl8OY2ai10dkSuozM4phLCtRoSXbNpdH7ekQGVvchgynJCWxK7YRtegKt0oclpa06PAIS+Mi6gw==}
 
-  '@yummacss/nitro@3.28.2':
-    resolution: {integrity: sha512-xUmIzGQOEoom1l5WLA+qQp2WaZ4kmrp48YqQBL8ZuHzPRG0zpC9X294q7ji9HA9LSOicYMba+ay9ot2xmGWN/g==}
+  '@yummacss/nitro@3.29.2':
+    resolution: {integrity: sha512-DszIX1COvg6QCR35VW7TEhrVY2zI3gx5p229EWQ3TSCFIfM08akhP3GNoBgbPtkiEaoIuBosaewhHduUpkHcyw==}
 
-  '@yummacss/vite@3.28.2':
-    resolution: {integrity: sha512-TYn57eIDONjGoKKjqp/wPClduS85ZdeZig/eGsuQt8dppsxbaLi6B2IK46AFrkkCa55H6H6c4XOhJubW8Lod/A==}
+  '@yummacss/vite@3.29.2':
+    resolution: {integrity: sha512-O+BrgsaJPfpyr1grO4bTqJpTEzQr/WYACIBnO4lA5RaaKaZq+xlIFvxRrPMPRyr8heLgPoCe4ks7D/dwxFo3Lg==}
     peerDependencies:
       vite: ^5.0.0 || ^6.0.0 || ^7.0.0
 
@@ -2576,8 +2576,8 @@ packages:
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
-  yummacss@3.28.2:
-    resolution: {integrity: sha512-1Il/BMpH0zveVSgYN4eXjL1H3mLZ338mX8A0tLd7ONXi3ictzQV7Mfze83bOKNpV5FxDuHrBXlHPA165yUxNTg==}
+  yummacss@3.29.2:
+    resolution: {integrity: sha512-IXRPYzy3wCuuGXM3BhKn3hZKa0tk+K0DEygoiOFo5+m9IfoeQ5bvTuXcQk+3auVYvYnEwU1XdpM8dza/EM7sJA==}
     hasBin: true
 
   zod@4.4.3:
@@ -3816,22 +3816,22 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@yummacss/canon@3.28.2':
+  '@yummacss/canon@3.29.2':
     dependencies:
-      '@yummacss/nitro': 3.28.2
+      '@yummacss/nitro': 3.29.2
       tinyglobby: 0.2.17
 
-  '@yummacss/core@3.28.2': {}
+  '@yummacss/core@3.29.2': {}
 
-  '@yummacss/nitro@3.28.2':
+  '@yummacss/nitro@3.29.2':
     dependencies:
-      '@yummacss/core': 3.28.2
+      '@yummacss/core': 3.29.2
       tinyglobby: 0.2.17
       zod: 4.4.3
 
-  '@yummacss/vite@3.28.2(vite@7.3.6(@types/node@24.13.3)(lightningcss@1.32.0)(terser@5.49.0))':
+  '@yummacss/vite@3.29.2(vite@7.3.6(@types/node@24.13.3)(lightningcss@1.32.0)(terser@5.49.0))':
     dependencies:
-      '@yummacss/nitro': 3.28.2
+      '@yummacss/nitro': 3.29.2
       picomatch: 4.0.5
       vite: 7.3.6(@types/node@24.13.3)(lightningcss@1.32.0)(terser@5.49.0)
 
@@ -5245,9 +5245,9 @@ snapshots:
 
   yallist@3.1.1: {}
 
-  yummacss@3.28.2:
+  yummacss@3.29.2:
     dependencies:
-      '@yummacss/nitro': 3.28.2
+      '@yummacss/nitro': 3.29.2
 
   zod@4.4.3: {}
 

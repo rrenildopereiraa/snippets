@@ -1,7 +1,7 @@
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { toBlob } from "html-to-image";
 import { useQueryStates } from "nuqs";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Canvas } from "./components/canvas";
 import { CommandPalette } from "./components/command-palette";
 import { EditorTabBar } from "./components/editor-tabs";
@@ -11,14 +11,20 @@ import {
 	type FontFamilyId,
 	Inspector,
 } from "./components/inspector";
-import { Onboarding, useOnboarding } from "./components/onboarding";
 import { RADIUS_MAX, RADIUS_MIN } from "./components/radius-control";
 import { StatusBar } from "./components/status-bar";
 import { useToast } from "./components/toast-provider";
-import { useChromeTheme } from "./lib/chrome-theme";
+import { type ResolvedMode, useChromeTheme } from "./lib/chrome-theme";
 import { buildCommands } from "./lib/commands";
 import { captureDataUrl } from "./lib/export";
-import { loadCustomTheme, THEME_FRAME_COLORS } from "./lib/highlighter";
+import {
+	framesColorsEqual,
+	loadCustomTheme,
+	normalizeThemeName,
+	requireThemeFrameColors,
+	THEME_FRAME_COLORS,
+	themeFrameColors,
+} from "./lib/highlighter";
 import { randomSnippet } from "./lib/snippets";
 import {
 	type BackgroundPattern,
@@ -30,7 +36,7 @@ import {
 import { settingsParsers } from "./lib/url-state";
 
 function App() {
-	const { colors } = useChromeTheme();
+	const { resolvedMode } = useChromeTheme();
 	const [documents, setDocuments] = useState<EditorDocument[]>(() => {
 		const snippet = randomSnippet();
 		return [
@@ -50,7 +56,6 @@ function App() {
 	const [showBoundingBox, setShowBoundingBox] = useState(true);
 	const [themeIsRandom, setThemeIsRandom] = useState(false);
 	const [paletteOpen, setPaletteOpen] = useState(false);
-	const { open: onboardingOpen, setOpen: setOnboardingOpen } = useOnboarding();
 	const [inspectorOpen, setInspectorOpen] = useState(false);
 	const [settings, setSettings] = useQueryStates(settingsParsers, {
 		history: "replace",
@@ -60,6 +65,45 @@ function App() {
 	const toast = useToast();
 
 	const active = documents.find((doc) => doc.id === activeId) ?? documents[0];
+
+	const themeName = normalizeThemeName(settings.theme);
+
+	// The frame's light/dark preference resolves independently of the app:
+	// "auto" follows the app scheme, light/dark force the code block.
+	const frameMode = settings.frameMode;
+	const resolvedFrameMode: ResolvedMode =
+		frameMode === "auto" ? resolvedMode : frameMode;
+
+	// The frame follows the app scheme for adaptive themes. While the user
+	// hasn't customized the frame colors (they still match the theme's
+	// defaults for the other scheme), swap to the current scheme's defaults
+	// when the mode flips. Custom themes and hand-tuned colors are left
+	// untouched.
+	const prevModeRef = useRef(resolvedFrameMode);
+	useEffect(() => {
+		const modeChanged = prevModeRef.current !== resolvedFrameMode;
+		prevModeRef.current = resolvedFrameMode;
+
+		const legacyTheme = normalizeThemeName(settings.theme) !== settings.theme;
+		if (legacyTheme) {
+			setSettings({ theme: normalizeThemeName(settings.theme) });
+		}
+		if (!modeChanged) return;
+
+		const nextColors = themeFrameColors(settings.theme, resolvedFrameMode);
+		const otherColors = themeFrameColors(
+			settings.theme,
+			resolvedFrameMode === "light" ? "dark" : "light",
+		);
+		if (
+			nextColors &&
+			otherColors &&
+			framesColorsEqual(settings.colors, otherColors) &&
+			!framesColorsEqual(settings.colors, nextColors)
+		) {
+			setSettings({ colors: nextColors });
+		}
+	}, [resolvedFrameMode, settings.theme, settings.colors, setSettings]);
 
 	const radii: CornerRadii = {
 		tl: settings.rtl,
@@ -249,7 +293,7 @@ function App() {
 	}
 
 	function handleThemeChange(name: string) {
-		const colors = THEME_FRAME_COLORS[name];
+		const colors = themeFrameColors(name, resolvedFrameMode);
 		setSettings({ theme: name, ...(colors ? { colors } : {}) });
 	}
 
@@ -269,7 +313,7 @@ function App() {
 		// than generating independent random hex values per token - arbitrary
 		// colors have no contrast or taste guarantees, real themes do.
 		const themeNames = Object.keys(THEME_FRAME_COLORS);
-		const themePool = themeNames.filter((name) => name !== settings.theme);
+		const themePool = themeNames.filter((name) => name !== themeName);
 		const pool = themePool.length > 0 ? themePool : themeNames;
 		const nextTheme = pool[Math.floor(Math.random() * pool.length)];
 
@@ -284,7 +328,7 @@ function App() {
 			rbr: radius,
 			font: fontFamilyIds[Math.floor(Math.random() * fontFamilyIds.length)],
 			theme: nextTheme,
-			colors: THEME_FRAME_COLORS[nextTheme],
+			colors: requireThemeFrameColors(nextTheme, resolvedFrameMode),
 		});
 		setThemeIsRandom(true);
 	}
@@ -379,14 +423,10 @@ function App() {
 		onRandomizeAll: randomizeAll,
 		onClearHighlights: clearHighlights,
 		onHighlightCurrentLine: highlightCurrentLine,
-		onShowShortcuts: () => setOnboardingOpen(true),
 	});
 
 	return (
-		<div
-			className="app-root d-f fd-c h-vh o-h"
-			style={{ backgroundColor: colors.page }}
-		>
+		<div className="app-root d-f fd-c h-vh o-h bg-page">
 			<EditorTabBar
 				documents={documents}
 				activeId={activeId}
@@ -424,10 +464,11 @@ function App() {
 					aspectRatio={settings.ratio}
 					radii={radii}
 					fontFamily={FONT_FAMILIES[settings.font].stack}
-					themeName={settings.theme}
+					themeName={themeName}
 					colors={settings.colors}
 					showBoundingBox={showBoundingBox}
 					frameRef={frameRef}
+					mode={resolvedFrameMode}
 				/>
 
 				<Inspector
@@ -456,9 +497,11 @@ function App() {
 					onRadiiChange={setRadii}
 					fontFamily={settings.font}
 					onFontFamilyChange={(value) => setSettings({ font: value })}
-					themeName={settings.theme}
+					themeName={themeName}
 					onThemeChange={handleManualThemeChange}
 					themeIsRandom={themeIsRandom}
+					frameMode={frameMode}
+					onFrameModeChange={(value) => setSettings({ frameMode: value })}
 					frameColors={settings.colors}
 					onFrameColorsChange={(value) => setSettings({ colors: value })}
 					onUploadTheme={handleUploadTheme}
@@ -470,9 +513,6 @@ function App() {
 				onLanguageChange={(value) => updateActive({ language: value })}
 				background={settings.pattern}
 				onBackgroundChange={(value) => setSettings({ pattern: value })}
-				themeName={settings.theme}
-				onThemeChange={handleManualThemeChange}
-				themeIsRandom={themeIsRandom}
 				onRandomize={randomizeAll}
 			/>
 
@@ -480,13 +520,6 @@ function App() {
 				open={paletteOpen}
 				onOpenChange={setPaletteOpen}
 				commands={commands}
-			/>
-
-			<Onboarding
-				open={onboardingOpen}
-				onOpenChange={setOnboardingOpen}
-				frameColors={settings.colors}
-				themeName={settings.theme}
 			/>
 		</div>
 	);

@@ -23,6 +23,7 @@ import amber from "../themes/amber-theme.json";
 import defaultTheme from "../themes/default-theme.json";
 import eclipsa from "../themes/eclipsa-theme.json";
 import monochrome from "../themes/monochrome-theme.json";
+import type { ResolvedMode } from "./chrome-theme";
 
 export const LANGUAGES = {
 	html: "HTML",
@@ -52,14 +53,40 @@ const BUILTIN_THEMES = [
 	amber,
 ] as ThemeInput[];
 
+// The canonical theme list users pick from. "Default" is the merged
+// Light + Monochrome theme - it renders the Light theme (colored tokens,
+// white frame) in light mode and Monochrome (grayscale tokens, near-black
+// frame) in dark mode.
 export const THEMES = {
-	[defaultTheme.name]: defaultTheme.name,
+	Default: "Default",
 	[eclipsa.name]: eclipsa.name,
-	[monochrome.name]: monochrome.name,
 	[amber.name]: amber.name,
 } as const;
 
 export type ThemeId = keyof typeof THEMES;
+
+// Legacy names from before the merge - old share URLs keep working by
+// resolving straight to the merged theme.
+const LEGACY_THEME_NAMES: Record<string, string> = {
+	[defaultTheme.name]: "Default",
+	[monochrome.name]: "Default",
+};
+
+export function normalizeThemeName(name: string): string {
+	return LEGACY_THEME_NAMES[name] ?? name;
+}
+
+// The concrete Shiki theme for a (possibly adaptive) theme name under a
+// given scheme.
+export function resolveShikiTheme(
+	themeName: string,
+	mode: ResolvedMode,
+): string {
+	const name = normalizeThemeName(themeName);
+	if (name === "Default")
+		return mode === "dark" ? monochrome.name : defaultTheme.name;
+	return name;
+}
 
 export function readThemeFrameColors(theme: {
 	name: string;
@@ -78,9 +105,9 @@ export function readThemeFrameColors(theme: {
 		tabActive: getColor(c, "tab.activeBackground") ?? f.tabActive ?? "#1a1d2e",
 		statusBarBg:
 			getColor(c, "statusBar.background") ?? f.statusBarBg ?? "#2d3151",
-	statusBarText:
-		getColor(c, "statusBar.foreground") ?? f.statusBarText ?? "#9aa5ef",
-	highlightMark:
+		statusBarText:
+			getColor(c, "statusBar.foreground") ?? f.statusBarText ?? "#9aa5ef",
+		highlightMark:
 			getColor(c, "editor.wordHighlightBackground") ??
 			getColor(c, "editor.rangeHighlightBackground") ??
 			getColor(c, "editor.selectionHighlightBackground") ??
@@ -108,42 +135,95 @@ function getColor(
 	return undefined;
 }
 
-export const THEME_FRAME_COLORS: Record<string, FrameColors> = {
-	[defaultTheme.name]: {
-		page: "#ffffff",
-		surface: "#ffffff",
-		border: "#cbd5e1",
-		accentDim: "#64748b",
-		tabBar: "#f1f5f9",
-		tabActive: "#ffffff",
-		statusBarBg: "#ffffff",
-		statusBarText: "#2563eb",
-		highlightMark: "#64748b",
-		highlightAdd: "#86efac",
-		highlightRemove: "#fca5a5",
+// Frame colors per scheme. Adaptive themes (Default) carry distinct light
+// and dark sets; static themes carry the same set for both schemes.
+export const THEME_FRAME_COLORS: Record<
+	string,
+	Record<ResolvedMode, FrameColors>
+> = {
+	Default: {
+		light: {
+			page: "#ffffff",
+			surface: "#ffffff",
+			border: "#cbd5e1",
+			accentDim: "#64748b",
+			tabBar: "#f1f5f9",
+			tabActive: "#ffffff",
+			statusBarBg: "#ffffff",
+			statusBarText: "#2563eb",
+			highlightMark: "#64748b",
+			highlightAdd: "#86efac",
+			highlightRemove: "#fca5a5",
+		},
+		dark: readThemeFrameColors(
+			monochrome as unknown as {
+				name: string;
+				colors?: Record<string, string | null>;
+				frameColors?: Partial<FrameColors>;
+			},
+		),
 	},
-	[eclipsa.name]: readThemeFrameColors(
-		eclipsa as unknown as {
-			name: string;
-			colors?: Record<string, string | null>;
-			frameColors?: Partial<FrameColors>;
-		},
-	),
-	[monochrome.name]: readThemeFrameColors(
-		monochrome as unknown as {
-			name: string;
-			colors?: Record<string, string | null>;
-			frameColors?: Partial<FrameColors>;
-		},
-	),
-	[amber.name]: readThemeFrameColors(
-		amber as unknown as {
-			name: string;
-			colors?: Record<string, string | null>;
-			frameColors?: Partial<FrameColors>;
-		},
-	),
+	[eclipsa.name]: (() => {
+		const colors = readThemeFrameColors(
+			eclipsa as unknown as {
+				name: string;
+				colors?: Record<string, string | null>;
+				frameColors?: Partial<FrameColors>;
+			},
+		);
+		return { light: colors, dark: colors };
+	})(),
+	[amber.name]: (() => {
+		const colors = readThemeFrameColors(
+			amber as unknown as {
+				name: string;
+				colors?: Record<string, string | null>;
+				frameColors?: Partial<FrameColors>;
+			},
+		);
+		return { light: colors, dark: colors };
+	})(),
 };
+
+// Default frame colors for a (possibly adaptive) theme under a scheme.
+export function themeFrameColors(
+	themeName: string,
+	mode: ResolvedMode,
+): FrameColors | undefined {
+	return THEME_FRAME_COLORS[normalizeThemeName(themeName)]?.[mode];
+}
+
+// Like themeFrameColors, but for themes that always ship both schemes
+// (the curated picker themes) - unknown/custom names throw instead of
+// silently producing undefined.
+export function requireThemeFrameColors(
+	themeName: string,
+	mode: ResolvedMode,
+): FrameColors {
+	const colors = themeFrameColors(themeName, mode);
+	if (!colors) {
+		throw new Error(`No frame colors for theme "${themeName}" in ${mode} mode`);
+	}
+	return colors;
+}
+
+const FRAME_COLOR_KEYS: (keyof FrameColors)[] = [
+	"page",
+	"surface",
+	"border",
+	"accentDim",
+	"tabBar",
+	"tabActive",
+	"statusBarBg",
+	"statusBarText",
+	"highlightMark",
+	"highlightAdd",
+	"highlightRemove",
+];
+
+export function framesColorsEqual(a: FrameColors, b: FrameColors): boolean {
+	return FRAME_COLOR_KEYS.every((key) => a[key] === b[key]);
+}
 
 let highlighterPromise: Promise<HighlighterCore> | null = null;
 

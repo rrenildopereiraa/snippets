@@ -1,6 +1,5 @@
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
 import type { ReactElement } from "react";
-import { useChromeTheme } from "../lib/chrome-theme";
 
 const ARROW_SIZE = 5;
 
@@ -11,20 +10,12 @@ export function Tooltip({
 	content: string;
 	children: ReactElement;
 }) {
-	const { colors } = useChromeTheme();
 	return (
 		<BaseTooltip.Root>
 			<BaseTooltip.Trigger render={children} />
 			<BaseTooltip.Portal>
 				<BaseTooltip.Positioner sideOffset={6} className="zi-90">
-					<BaseTooltip.Popup
-						className="tooltip-popup p-r px-2 py-1 bw-1 bs-s fs-xs ff-m us-none bs-o-xs"
-						style={{
-							borderColor: colors.border,
-							backgroundColor: colors.surface,
-							color: colors.accentDim,
-						}}
-					>
+					<BaseTooltip.Popup className="tooltip-popup p-r px-2 py-1 bw-1 bs-s bc-border bg-surface c-accent-dim fs-xs ff-m us-none bs-o-xs">
 						{/* Square-tipped arrow to match the app's flat, un-rounded
 						    controls - the reference version uses a rounded popup.
 						    Rotated per side so the tip always points at the anchor
@@ -61,8 +52,7 @@ export function Tooltip({
 							>
 								<path
 									d="M0 0 L5 5 L10 0"
-									fill={colors.surface}
-									stroke={colors.border}
+									className="f-surface s-border"
 									strokeWidth="1"
 								/>
 							</svg>

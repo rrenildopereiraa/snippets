@@ -7,7 +7,8 @@ import {
 } from "nuqs";
 import type { FrameColors } from "../components/frame";
 import { FONT_FAMILIES, type FontFamilyId } from "../components/inspector";
-import { THEME_FRAME_COLORS, THEME_NAME } from "./highlighter";
+import type { FrameMode } from "./chrome-theme";
+import { requireThemeFrameColors, THEME_NAME } from "./highlighter";
 import type { AspectRatio, BackgroundPattern } from "./types";
 
 const FRAME_COLOR_KEYS: (keyof FrameColors)[] = [
@@ -55,7 +56,13 @@ export const settingsParsers = {
 		Object.keys(FONT_FAMILIES) as FontFamilyId[],
 	).withDefault("default"),
 	theme: parseAsString.withDefault(THEME_NAME),
+	// The frame's light/dark preference, independent of the app scheme.
+	frameMode: parseAsStringEnum<FrameMode>([
+		"light",
+		"dark",
+		"auto",
+	]).withDefault("auto"),
 	colors: parseAsJson<FrameColors>(parseFrameColors).withDefault(
-		THEME_FRAME_COLORS[THEME_NAME],
+		requireThemeFrameColors(THEME_NAME, "dark"),
 	),
 };

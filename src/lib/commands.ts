@@ -37,7 +37,6 @@ export function buildCommands({
 	onRandomizeAll,
 	onClearHighlights,
 	onHighlightCurrentLine,
-	onShowShortcuts,
 }: {
 	showTabBar: boolean;
 	onShowTabBarChange: (value: boolean) => void;
@@ -60,7 +59,6 @@ export function buildCommands({
 	onRandomizeAll: () => void;
 	onClearHighlights: () => void;
 	onHighlightCurrentLine: () => void;
-	onShowShortcuts: () => void;
 }): Command[] {
 	const BACKGROUND_PATTERNS: Record<BackgroundPattern, string> = {
 		"stripes-right": "Stripes Right",
@@ -68,11 +66,6 @@ export function buildCommands({
 	};
 
 	return [
-		{
-			id: "show-shortcuts",
-			label: "Show keyboard shortcuts",
-			run: onShowShortcuts,
-		},
 		{
 			id: "new-snippet",
 			label: "New snippet",
