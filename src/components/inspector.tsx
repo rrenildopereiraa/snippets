@@ -141,10 +141,7 @@ function OptionSwitch({
 	disabled?: boolean;
 }) {
 	return (
-		<div
-			className="d-f ai-c jc-sb g-2 px-2 pb-3"
-			style={disabled ? { opacity: 0.5 } : undefined}
-		>
+		<div className={`d-f ai-c jc-sb g-2 px-2 pb-3 ${disabled ? "o-50" : ""}`}>
 			<span className="fs-sm ff-m us-none c-accent-dim">{label}</span>
 			<Switch.Root
 				checked={checked}

@@ -138,6 +138,12 @@ export const Frame = forwardRef<
 		scale: number;
 	} | null>(null);
 
+	// Whether a fitted size has ever been painted. The first fit must apply
+	// synchronously (before paint) so the initial render doesn't flash the
+	// aspect-ratio fallback; once something is on screen, ratio changes defer
+	// to the next frame so the CSS transition can animate the shrink.
+	const hasFitRef = useRef(false);
+
 	useLayoutEffect(() => {
 		if (!ratioValue) {
 			setFit(null);
@@ -178,6 +184,7 @@ export const Frame = forwardRef<
 				(boxHeight - FRAME_PADDING * 2) / naturalHeight,
 			);
 
+			hasFitRef.current = true;
 			setFit({
 				width: boxWidth,
 				height: boxHeight,
@@ -191,7 +198,13 @@ export const Frame = forwardRef<
 		});
 		observer.observe(viewport);
 		observer.observe(content);
-		update();
+
+		if (hasFitRef.current) {
+			cancelAnimationFrame(raf);
+			raf = requestAnimationFrame(update);
+		} else {
+			update();
+		}
 
 		return () => {
 			cancelAnimationFrame(raf);
@@ -202,7 +215,7 @@ export const Frame = forwardRef<
 	return (
 		<div
 			ref={ref}
-			className="p-r min-w-0 o-h"
+			className={`p-r min-w-0 o-h ${ratioValue ? "d-f ai-c jc-c tp-d tdu-200" : ""}`}
 			style={{
 				padding: FRAME_PADDING,
 				backgroundColor: colors.page,
@@ -214,24 +227,17 @@ export const Frame = forwardRef<
 							width: fit ? fit.width : undefined,
 							height: fit ? fit.height : undefined,
 							aspectRatio: fit ? undefined : ratioValue,
-							// Centres the code frame in the letterboxed space.
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
 						}
 					: {}),
 			}}
 		>
 			<div
 				ref={contentRef}
-				className={
-					ratioValue ? "p-r zi-10 w-192 o-v" : "p-r zi-10 w-192 max-w-100% o-v"
-				}
+				className={`p-r zi-10 w-192 o-v ${ratioValue ? "tp-t tdu-200 tor-c" : "max-w-100%"}`}
 				style={{
 					backgroundColor: colors.surface,
 					borderRadius,
 					transform: fit ? `scale(${fit.scale})` : undefined,
-					transformOrigin: "center",
 				}}
 			>
 				{showBackgroundPattern && patternStyle && (

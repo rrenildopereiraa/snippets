@@ -11,5 +11,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release.
 
-[Unreleased]: https://github.com/rrenildopereiraa/prisharp/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/rrenildopereiraa/prisharp/releases/tag/v0.1.0
+[Unreleased]: https://github.com/rrenildopereiraa/snippets.renildo.dev/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/rrenildopereiraa/snippets.renildo.dev/releases/tag/v0.1.0

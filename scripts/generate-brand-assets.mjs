@@ -20,7 +20,7 @@ function ogImageSvg({ tagline = "Beautiful code screenshots." } = {}) {
 	const markSize = 140;
 	const gap = 28;
 	const titleFontSize = 68;
-	const wordmarkChars = "Prisharp".length;
+	const wordmarkChars = "Snippets".length;
 	const wordmarkWidth = wordmarkChars * titleFontSize * 0.6;
 	const lockupWidth = markSize + gap + wordmarkWidth;
 	const lockupHeight = markSize;

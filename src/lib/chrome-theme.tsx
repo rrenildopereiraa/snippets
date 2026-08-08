@@ -18,7 +18,7 @@ export type FrameMode = "light" | "dark" | "auto";
 // scheme, CSS consumers just inherit `color-scheme` instead.
 export type ResolvedMode = "light" | "dark";
 
-const STORAGE_KEY = "prisharp-chrome-mode";
+const STORAGE_KEY = "snippets.renildo.dev-chrome-mode";
 
 // Yumma CSS color-scheme utilities: `cs-l`/`cs-d` force a scheme, `cs-ld`
 // follows the operating system. Applied to <html> so Base UI portals

@@ -17,7 +17,7 @@ import { ExportButton } from "./export-button";
 import type { ExportFormat } from "./format-picker";
 import { Tooltip } from "./tooltip";
 
-const GITHUB_URL = "https://github.com/rrenildopereiraa/prisharp";
+const GITHUB_URL = "https://github.com/rrenildopereiraa/snippets.renildo.dev";
 
 function TabItem({
 	doc,
@@ -146,8 +146,9 @@ export function EditorTabBar({
 								? `Snippet limit reached (${MAX_DOCUMENTS})`
 								: "New snippet"
 						}
-						style={{ opacity: atLimit ? 0.4 : undefined }}
-						className="d-f ai-c jc-c as-s w-8 brw-1 bs-s bc-border bg-transparent c-accent-dim h:c-accent h:bg-page c-p fv:os-s fv:oo--2 fv:oc-accent"
+						className={`d-f ai-c jc-c as-s w-8 brw-1 bs-s bc-border bg-transparent c-accent-dim h:c-accent h:bg-page c-p fv:os-s fv:oo--2 fv:oc-accent ${
+							atLimit ? "o-40" : ""
+						}`}
 					>
 						<PlusIcon size={14} weight="bold" />
 					</button>

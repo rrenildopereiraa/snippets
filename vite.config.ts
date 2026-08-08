@@ -13,8 +13,8 @@ export default defineConfig({
 				maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
 			},
 			manifest: {
-				name: "Prisharp",
-				short_name: "Prisharp",
+				name: "Snippets",
+				short_name: "Snippets",
 				description: "Beautiful code screenshots.",
 				start_url: "/",
 				display: "standalone",

@@ -2,6 +2,9 @@ import { defineConfig } from "yummacss";
 
 export default defineConfig({
 	source: ["./src/**/*.{ts,tsx}"],
+	// Classes only ever referenced inside conditional expressions; the
+	// scanner can't reliably see those, so force-generate them.
+	safelist: ["tp-d", "tdu-200", "tp-t", "tor-c", "o-40", "o-50"],
 	theme: {
 		colors: {
 			accent: { light: "#2563eb", dark: "#bec6f2" },

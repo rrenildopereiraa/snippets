@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://prisharp.com/sitemap.xml
+Sitemap: https://snippets.renildo.dev.com/sitemap.xml

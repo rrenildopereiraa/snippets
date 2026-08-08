@@ -339,7 +339,7 @@ function App() {
 		try {
 			const dataUrl = await captureDataUrl(frameRef.current, format);
 			const link = document.createElement("a");
-			link.download = `${active.fileName || "prisharp"}.${format}`;
+			link.download = `${active.fileName || "snippets.renildo.dev"}.${format}`;
 			link.href = dataUrl;
 			link.click();
 			toast.add({
