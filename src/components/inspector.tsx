@@ -147,12 +147,14 @@ function OptionSwitch({
 				checked={checked}
 				onCheckedChange={onCheckedChange}
 				disabled={disabled}
-				className={`switch-root p-r d-f ai-c h-5 w-9 m-0 px-1 bw-1 bs-s c-p fv:os-s fv:oo-2 fv:oc-accent ${
+				className={`p-r d-f ai-c h-5 w-9 m-0 px-1 bw-1 bs-s c-p tp-c tdu-150 fv:os-s fv:oo-2 fv:oc-accent ${
 					checked ? "bg-accent bc-accent" : "bg-page bc-border"
 				}`}
 			>
 				<Switch.Thumb
-					className={`switch-thumb w-4 h-3 bs-o-xs ${checked ? "bg-page" : "bg-accent-dim"}`}
+					className={`w-4 h-3 bs-o-xs tp-t tdu-150 ${
+						checked ? "ttx-3 bg-page" : "ttx-0 bg-accent-dim"
+					}`}
 				/>
 			</Switch.Root>
 		</div>

@@ -86,23 +86,6 @@ body {
 	transform: translateY(2px) scale(0.98);
 }
 
-.switch-root {
-	transition:
-		background-color 150ms ease,
-		border-color 150ms ease;
-}
-
-.switch-thumb {
-	transition:
-		transform 150ms ease,
-		background-color 150ms ease;
-}
-
-.switch-thumb[data-checked] {
-	/* Track w-9 − px-1×2 − thumb w-4 ≈ 0.75rem */
-	transform: translateX(0.75rem);
-}
-
 .frame-collapsible {
 	display: grid;
 	grid-template-rows: 0fr;
