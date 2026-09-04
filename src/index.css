@@ -93,7 +93,14 @@ body {
 }
 
 .switch-thumb {
-	transition: margin-left 150ms ease;
+	transition:
+		transform 150ms ease,
+		background-color 150ms ease;
+}
+
+.switch-thumb[data-checked] {
+	/* Track w-9 − px-1×2 − thumb w-4 ≈ 0.75rem */
+	transform: translateX(0.75rem);
 }
 
 .frame-collapsible {

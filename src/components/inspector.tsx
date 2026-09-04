@@ -152,7 +152,7 @@ function OptionSwitch({
 				}`}
 			>
 				<Switch.Thumb
-					className={`switch-thumb w-4 h-3 bs-o-xs ${checked ? "ml-3 bg-page" : "ml-0 bg-accent-dim"}`}
+					className={`switch-thumb w-4 h-3 bs-o-xs ${checked ? "bg-page" : "bg-accent-dim"}`}
 				/>
 			</Switch.Root>
 		</div>
