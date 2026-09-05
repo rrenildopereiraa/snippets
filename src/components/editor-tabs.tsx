@@ -101,23 +101,8 @@ export function EditorTabBar({
 	return (
 		<header className="d-f p-st t-0 zi-10 bbw-1 bs-s bc-border bg-surface">
 			<div className="d-f ai-c g-2 px-3 py-2 brw-1 bs-s bc-border">
-				<svg
-					width="22"
-					height="22"
-					viewBox="0 0 100 100"
-					aria-hidden="true"
-					className="fs-0"
-				>
-					<polygon
-						points="50,18 78,50 50,82 22,50"
-						fill="#2563eb"
-						stroke="#1d4ed8"
-						strokeWidth="1"
-					/>
-					<polygon points="50,18 64,50 50,82" fill="#93b4f5" />
-				</svg>
 				<span className="fs-sm ff-m fw-700 us-none ws-nw c-accent-dim">
-					Pri<span className="c-accent">sharp</span>
+					Snip<span className="c-accent">pets</span>
 				</span>
 			</div>
 
