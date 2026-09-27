@@ -96,6 +96,23 @@ body {
 	grid-template-rows: 1fr;
 }
 
+/* Fold chevrons only appear while pointing at the code, so they never
+   clutter the snippet itself (exports skip them entirely). */
+.code-editor .fold-toggle {
+	opacity: 0;
+	transition: opacity 120ms ease;
+}
+
+.code-editor:hover .fold-toggle {
+	opacity: 1;
+}
+
+@media (hover: none) {
+	.code-editor .fold-toggle {
+		opacity: 1;
+	}
+}
+
 .app-root {
 	padding-top: env(safe-area-inset-top);
 	padding-right: env(safe-area-inset-right);

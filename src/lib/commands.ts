@@ -37,6 +37,10 @@ export function buildCommands({
 	onRandomizeAll,
 	onClearHighlights,
 	onHighlightCurrentLine,
+	onFoldCurrentRegion,
+	onUnfoldCurrentRegion,
+	onFoldAll,
+	onUnfoldAll,
 }: {
 	showTabBar: boolean;
 	onShowTabBarChange: (value: boolean) => void;
@@ -59,6 +63,10 @@ export function buildCommands({
 	onRandomizeAll: () => void;
 	onClearHighlights: () => void;
 	onHighlightCurrentLine: () => void;
+	onFoldCurrentRegion: () => void;
+	onUnfoldCurrentRegion: () => void;
+	onFoldAll: () => void;
+	onUnfoldAll: () => void;
 }): Command[] {
 	const BACKGROUND_PATTERNS: Record<BackgroundPattern, string> = {
 		"stripes-right": "Stripes Right",
@@ -91,6 +99,28 @@ export function buildCommands({
 			id: "clear-highlights",
 			label: "Clear highlights",
 			run: onClearHighlights,
+		},
+		{
+			id: "fold-current-region",
+			label: "Fold region at cursor",
+			kbd: `${modLabel} Alt [`,
+			run: onFoldCurrentRegion,
+		},
+		{
+			id: "unfold-current-region",
+			label: "Unfold region at cursor",
+			kbd: `${modLabel} Alt ]`,
+			run: onUnfoldCurrentRegion,
+		},
+		{
+			id: "fold-all",
+			label: "Fold all regions",
+			run: onFoldAll,
+		},
+		{
+			id: "unfold-all",
+			label: "Unfold all regions",
+			run: onUnfoldAll,
 		},
 		{
 			id: "export",
