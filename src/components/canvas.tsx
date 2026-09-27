@@ -14,6 +14,8 @@ import type { CornerRadii } from "./inspector";
 export function Canvas({
 	code,
 	onCodeChange,
+	foldedLines,
+	onFoldedLinesChange,
 	language,
 	fileName,
 	onFileNameChange,
@@ -40,6 +42,8 @@ export function Canvas({
 }: {
 	code: string;
 	onCodeChange: (value: string) => void;
+	foldedLines: number[];
+	onFoldedLinesChange: (lines: number[]) => void;
 	language: LanguageId;
 	fileName: string;
 	onFileNameChange: (value: string) => void;
@@ -82,6 +86,8 @@ export function Canvas({
 					ref={frameRef}
 					code={code}
 					onCodeChange={onCodeChange}
+					foldedLines={foldedLines}
+					onFoldedLinesChange={onFoldedLinesChange}
 					language={language}
 					fileName={fileName}
 					onFileNameChange={onFileNameChange}

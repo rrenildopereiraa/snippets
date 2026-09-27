@@ -16,7 +16,13 @@ import { StatusBar } from "./components/status-bar";
 import { useToast } from "./components/toast-provider";
 import { type ResolvedMode, useChromeTheme } from "./lib/chrome-theme";
 import { buildCommands } from "./lib/commands";
-import { captureDataUrl } from "./lib/export";
+import { captureDataUrl, exportFilter } from "./lib/export";
+import {
+	buildFoldView,
+	computeFoldRanges,
+	foldTargetAt,
+	fullLineAtDisplayOffset,
+} from "./lib/folding";
 import {
 	framesColorsEqual,
 	loadCustomTheme,
@@ -47,6 +53,7 @@ function App() {
 				language: snippet.language,
 				highlightedLines: [],
 				highlightedWords: [],
+				foldedLines: [],
 			},
 		];
 	});
@@ -222,12 +229,46 @@ function App() {
 		});
 	}
 
-	function highlightCurrentLine() {
+	// The textarea only holds unfolded lines, so its caret has to be mapped
+	// back to a line of the full source.
+	function currentLine(): number | null {
 		const textarea = codeTextareaRef.current;
-		if (!textarea) return;
-		const caret = textarea.selectionStart;
-		const line = active.code.slice(0, caret).split("\n").length - 1;
-		cycleLineHighlight(line);
+		if (!textarea) return null;
+		const view = buildFoldView(active.code, active.foldedLines);
+		return fullLineAtDisplayOffset(view, textarea.selectionStart);
+	}
+
+	function highlightCurrentLine() {
+		const line = currentLine();
+		if (line !== null) cycleLineHighlight(line);
+	}
+
+	function foldCurrentRegion() {
+		const line = currentLine();
+		if (line === null) return;
+		const view = buildFoldView(active.code, active.foldedLines);
+		const target = foldTargetAt(view, active.foldedLines, line);
+		if (target === null) return;
+		updateActive({
+			foldedLines: [...active.foldedLines, target].sort((a, b) => a - b),
+		});
+	}
+
+	function unfoldCurrentRegion() {
+		const line = currentLine();
+		if (line === null) return;
+		updateActive({
+			foldedLines: active.foldedLines.filter((l) => l !== line),
+		});
+	}
+
+	function foldAll() {
+		const ranges = computeFoldRanges(active.code.split("\n"));
+		updateActive({ foldedLines: [...ranges.keys()].sort((a, b) => a - b) });
+	}
+
+	function unfoldAll() {
+		updateActive({ foldedLines: [] });
 	}
 
 	function clearHighlights() {
@@ -251,6 +292,7 @@ function App() {
 			language: snippet.language,
 			highlightedLines: [],
 			highlightedWords: [],
+			foldedLines: [],
 		};
 		setDocuments((docs) =>
 			docs.length >= MAX_DOCUMENTS ? docs : [...docs, doc],
@@ -354,7 +396,10 @@ function App() {
 
 	async function handleCopyImage() {
 		if (!frameRef.current) return;
-		const blob = await toBlob(frameRef.current, { pixelRatio: 2 });
+		const blob = await toBlob(frameRef.current, {
+			pixelRatio: 2,
+			filter: exportFilter,
+		});
 		if (!blob) return;
 		await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
 		toast.add({
@@ -393,6 +438,14 @@ function App() {
 		event.preventDefault();
 		randomizeAll();
 	});
+	useHotkey("Mod+Alt+[", (event) => {
+		event.preventDefault();
+		foldCurrentRegion();
+	});
+	useHotkey("Mod+Alt+]", (event) => {
+		event.preventDefault();
+		unfoldCurrentRegion();
+	});
 
 	const commands = buildCommands({
 		showTabBar: settings.tabBar,
@@ -423,6 +476,10 @@ function App() {
 		onRandomizeAll: randomizeAll,
 		onClearHighlights: clearHighlights,
 		onHighlightCurrentLine: highlightCurrentLine,
+		onFoldCurrentRegion: foldCurrentRegion,
+		onUnfoldCurrentRegion: unfoldCurrentRegion,
+		onFoldAll: foldAll,
+		onUnfoldAll: unfoldAll,
 	});
 
 	return (
@@ -446,6 +503,8 @@ function App() {
 				<Canvas
 					code={active.code}
 					onCodeChange={(value) => updateActive({ code: value })}
+					foldedLines={active.foldedLines}
+					onFoldedLinesChange={(value) => updateActive({ foldedLines: value })}
 					language={active.language}
 					fileName={active.fileName}
 					onFileNameChange={(value) => updateActive({ fileName: value })}

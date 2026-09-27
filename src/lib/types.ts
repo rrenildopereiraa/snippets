@@ -54,6 +54,8 @@ export interface EditorDocument {
 	language: LanguageId;
 	highlightedLines: HighlightedLine[];
 	highlightedWords: HighlightedWord[];
+	// Header lines of collapsed regions (see lib/folding).
+	foldedLines: number[];
 }
 
 export interface CornerRadii {

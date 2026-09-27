@@ -1,6 +1,22 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { CaretDownIcon, CaretRightIcon } from "@phosphor-icons/react";
+import {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import type { ResolvedMode } from "../lib/chrome-theme";
 import { contrastColor, overlayColor } from "../lib/color";
+import {
+	applyDisplayEdit,
+	applyIndent,
+	buildFoldView,
+	diffText,
+	type FoldEditResult,
+	toFullRange,
+} from "../lib/folding";
 import {
 	getHighlighter,
 	type LanguageId,
@@ -200,6 +216,8 @@ function CodeLine({
 	highlightedWords,
 	wordPreview,
 	highlightColors,
+	fold,
+	foldColor,
 }: {
 	lineIndex: number;
 	line: string;
@@ -209,6 +227,12 @@ function CodeLine({
 	highlightedWords: HighlightedWord[];
 	wordPreview: WordRange | null;
 	highlightColors: HighlightColors;
+	fold: {
+		collapsed: boolean;
+		hiddenLines: number;
+		onToggle: () => void;
+	} | null;
+	foldColor: string;
 }) {
 	const lineBackground = highlightType
 		? overlayColor(highlightColors[highlightType], 0.16)
@@ -225,9 +249,29 @@ function CodeLine({
 	return (
 		<div
 			data-line-index={lineIndex}
-			className="ws-pw d-b mx--4 px-4"
+			className="ws-pw d-b p-r mx--4 px-4"
 			style={lineBackground ? { backgroundColor: lineBackground } : undefined}
 		>
+			{fold && (
+				<button
+					type="button"
+					tabIndex={-1}
+					aria-label={fold.collapsed ? "Unfold region" : "Fold region"}
+					aria-expanded={!fold.collapsed}
+					data-export-ignore=""
+					// Keep focus (and the caret) in the textarea.
+					onMouseDown={(event) => event.preventDefault()}
+					onClick={fold.onToggle}
+					className="fold-toggle p-a t-0 l-0 d-f ai-c jc-c w-4 p-0 bw-0 bg-transparent c-p"
+					style={{ height: "1lh", color: foldColor }}
+				>
+					{fold.collapsed ? (
+						<CaretRightIcon size={10} weight="bold" />
+					) : (
+						<CaretDownIcon size={10} weight="bold" />
+					)}
+				</button>
+			)}
 			{/* Fall back to the plain line while Shiki tokens load, so
 			    lines keep their real height from the first paint */}
 			{segments.map((segment, segmentIndex) => (
@@ -256,6 +300,28 @@ function CodeLine({
 					{segment.content}
 				</span>
 			))}
+			{fold?.collapsed && (
+				// Sits above the textarea so it can be clicked to unfold.
+				<button
+					type="button"
+					tabIndex={-1}
+					title={`Unfold ${fold.hiddenLines} hidden line${fold.hiddenLines === 1 ? "" : "s"}`}
+					onMouseDown={(event) => event.preventDefault()}
+					onClick={fold.onToggle}
+					className="p-r zi-10 mx-1 px-1 py-0 bw-0 c-p"
+					style={{
+						// Match the row exactly so a folded line isn't taller.
+						font: "inherit",
+						lineHeight: "inherit",
+						verticalAlign: "top",
+						color: foldColor,
+						backgroundColor: overlayColor(foldColor, 0.08),
+						boxShadow: `inset 0 0 0 1px ${overlayColor(foldColor, 0.25)}`,
+					}}
+				>
+					⋯
+				</button>
+			)}
 			{line.length === 0 && " "}
 		</div>
 	);
@@ -277,9 +343,13 @@ export function CodeEditor({
 	textareaRef,
 	highlightColors,
 	mode,
+	foldedLines,
+	onFoldedLinesChange,
 }: {
 	code: string;
 	onCodeChange: (value: string) => void;
+	foldedLines: number[];
+	onFoldedLinesChange: (lines: number[]) => void;
 	language: LanguageId;
 	themeName: string;
 	fontFamily?: string;
@@ -337,23 +407,99 @@ export function CodeEditor({
 		};
 	}, [code, language, themeName, mode]);
 
-	const lines = code.split("\n");
+	const view = useMemo(
+		() => buildFoldView(code, foldedLines),
+		[code, foldedLines],
+	);
+	const lines = view.lines;
 	const editorStyle = {
 		tabSize: 2,
 		...(fontFamily ? { fontFamily } : {}),
 	};
 	const caretColor = contrastColor(background);
+	const foldColor = overlayColor(caretColor, 0.55);
 
-	const setSelection = useCallback(
-		(textarea: HTMLTextAreaElement, start: number, end: number) => {
-			// The textarea is controlled, so the value updates on re-render;
-			// restore the caret afterwards.
-			requestAnimationFrame(() => {
-				textarea.selectionStart = start;
-				textarea.selectionEnd = end;
-			});
+	// The textarea only holds the visible lines, so its caret offsets shift
+	// whenever a region folds or unfolds. The selection is tracked in
+	// full-source offsets and mapped back into the textarea after every
+	// render that changes what's displayed.
+	const selectionRef = useRef<{ start: number; end: number } | null>(null);
+
+	useLayoutEffect(() => {
+		const textarea = textareaRef.current;
+		const selection = selectionRef.current;
+		if (!textarea || !selection) return;
+		const start = view.toDisplay(selection.start);
+		const end = view.toDisplay(selection.end);
+		if (textarea.selectionStart !== start || textarea.selectionEnd !== end) {
+			textarea.setSelectionRange(start, end);
+		}
+	}, [view, textareaRef]);
+
+	const handleSelect = useCallback(
+		(event: React.SyntheticEvent<HTMLTextAreaElement>) => {
+			const textarea = event.currentTarget;
+			selectionRef.current = {
+				start: view.toFull(textarea.selectionStart),
+				end: view.toFull(textarea.selectionEnd),
+			};
 		},
-		[],
+		[view],
+	);
+
+	const commitEdit = useCallback(
+		(result: FoldEditResult) => {
+			selectionRef.current = result.selection;
+			if (result.code !== code) onCodeChange(result.code);
+			if (result.foldedLines.join() !== foldedLines.join()) {
+				onFoldedLinesChange(result.foldedLines);
+			}
+		},
+		[code, foldedLines, onCodeChange, onFoldedLinesChange],
+	);
+
+	const handleChange = useCallback(
+		(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+			const textarea = event.currentTarget;
+			const { start, end, inserted } = diffText(
+				view.displayCode,
+				textarea.value,
+				textarea.selectionEnd,
+			);
+			commitEdit(applyDisplayEdit(view, foldedLines, start, end, inserted));
+		},
+		[view, foldedLines, commitEdit],
+	);
+
+	const toggleFold = useCallback(
+		(line: number) => {
+			onFoldedLinesChange(
+				foldedLines.includes(line)
+					? foldedLines.filter((l) => l !== line)
+					: [...foldedLines, line].sort((a, b) => a - b),
+			);
+		},
+		[foldedLines, onFoldedLinesChange],
+	);
+
+	// Copying (or cutting) across a collapsed region takes the hidden lines
+	// with it, rather than just the placeholder the textarea holds.
+	const handleClipboard = useCallback(
+		(event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+			const textarea = event.currentTarget;
+			const { selectionStart: start, selectionEnd: end } = textarea;
+			if (view.folded.size === 0 || start === end) return;
+			event.preventDefault();
+			const range = toFullRange(view, start, end);
+			event.clipboardData.setData(
+				"text/plain",
+				code.slice(range.start, range.end),
+			);
+			if (event.type === "cut") {
+				commitEdit(applyDisplayEdit(view, foldedLines, start, end, ""));
+			}
+		},
+		[view, code, foldedLines, commitEdit],
 	);
 
 	const handleKeyDown = useCallback(
@@ -367,46 +513,14 @@ export function CodeEditor({
 
 			// Plain Tab with no selection: insert a single indent at the caret.
 			if (!dedent && start === end) {
-				const next = code.slice(0, start) + TAB + code.slice(end);
-				onCodeChange(next);
-				setSelection(textarea, start + TAB.length, start + TAB.length);
+				commitEdit(applyDisplayEdit(view, foldedLines, start, end, TAB));
 				return;
 			}
 
 			// Otherwise indent/dedent every line the selection touches.
-			const firstLineStart = code.lastIndexOf("\n", start - 1) + 1;
-			const nextBreak = code.indexOf("\n", end);
-			const regionEnd = nextBreak === -1 ? code.length : nextBreak;
-			const regionLines = code.slice(firstLineStart, regionEnd).split("\n");
-
-			let firstDelta = 0;
-			let totalDelta = 0;
-			const transformed = regionLines.map((line, index) => {
-				if (dedent) {
-					const cut = line.startsWith(TAB)
-						? 1
-						: (line.match(/^ {1,2}/)?.[0].length ?? 0);
-					if (index === 0) firstDelta = -cut;
-					totalDelta -= cut;
-					return line.slice(cut);
-				}
-				if (index === 0) firstDelta = TAB.length;
-				totalDelta += TAB.length;
-				return TAB + line;
-			});
-
-			const next =
-				code.slice(0, firstLineStart) +
-				transformed.join("\n") +
-				code.slice(regionEnd);
-			onCodeChange(next);
-			setSelection(
-				textarea,
-				Math.max(firstLineStart, start + firstDelta),
-				end + totalDelta,
-			);
+			commitEdit(applyIndent(view, foldedLines, start, end, dedent, TAB));
 		},
-		[code, onCodeChange, setSelection],
+		[view, foldedLines, commitEdit],
 	);
 
 	const finishDrag = useCallback(() => {
@@ -561,8 +675,11 @@ export function CodeEditor({
 			: [];
 
 	return (
-		<div className="p-r ff-m fs-sm lh-4" style={editorStyle}>
-			{lines.map((line, lineIndex) => {
+		<div className="code-editor p-r ff-m fs-sm lh-4" style={editorStyle}>
+			{view.visible.map((lineIndex) => {
+				const line = lines[lineIndex];
+				const foldEnd = view.ranges.get(lineIndex);
+				const collapsed = view.folded.has(lineIndex);
 				const committed = highlightedLines.find((h) => h.line === lineIndex);
 				const inDragRange =
 					dragPreview &&
@@ -570,7 +687,6 @@ export function CodeEditor({
 					lineIndex <= Math.max(dragPreview.start, dragPreview.end);
 				return (
 					<CodeLine
-						// biome-ignore lint/suspicious/noArrayIndexKey: index is stable, lines are purely positional
 						key={lineIndex}
 						lineIndex={lineIndex}
 						line={line}
@@ -588,12 +704,25 @@ export function CodeEditor({
 							wordPreviewRanges.find((r) => r.line === lineIndex) ?? null
 						}
 						highlightColors={highlightColors}
+						fold={
+							foldEnd === undefined
+								? null
+								: {
+										collapsed,
+										hiddenLines: foldEnd - lineIndex,
+										onToggle: () => toggleFold(lineIndex),
+									}
+						}
+						foldColor={foldColor}
 					/>
 				);
 			})}
 			<textarea
-				value={code}
-				onChange={(event) => onCodeChange(event.target.value)}
+				value={view.displayCode}
+				onChange={handleChange}
+				onSelect={handleSelect}
+				onCopy={handleClipboard}
+				onCut={handleClipboard}
 				spellCheck={false}
 				autoCapitalize="off"
 				autoCorrect="off"
